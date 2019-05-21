@@ -1,0 +1,163 @@
+From 40e093d747f267a66a2d00333cf5d5e083500eea Mon Sep 17 00:00:00 2001
+From: radhikaj <radhikaj@microsoft.com>
+Date: Tue, 21 May 2019 21:42:19 +0000
+Subject: [PATCH] Get openssl to build against MUSL headers. Use SGX rand
+ functions
+
+---
+ crypto/mem_sec.c       |  2 +-
+ crypto/rand/drbg_lib.c | 15 +++++++++-
+ crypto/rand/rand_lib.c | 78 ++++++++++++++++++++++++++++++++++----------------
+ 3 files changed, 68 insertions(+), 27 deletions(-)
+
+diff --git a/crypto/mem_sec.c b/crypto/mem_sec.c
+index 9e0f670..3111da7 100644
+--- a/crypto/mem_sec.c
++++ b/crypto/mem_sec.c
+@@ -30,7 +30,7 @@
+ # if defined(OPENSSL_SYS_LINUX)
+ #  include <sys/syscall.h>
+ #  if defined(SYS_mlock2)
+-#   include <linux/mman.h>
++#   include <sys/mman.h>
+ #   include <errno.h>
+ #  endif
+ # endif
+diff --git a/crypto/rand/drbg_lib.c b/crypto/rand/drbg_lib.c
+index a132821..0317e8a 100644
+--- a/crypto/rand/drbg_lib.c
++++ b/crypto/rand/drbg_lib.c
+@@ -1144,6 +1144,18 @@ RAND_DRBG *RAND_DRBG_get0_private(void)
+     return drbg;
+ }
+ 
++int sgx_rand_status(void);
++int get_sgx_rand_bytes(unsigned char* buf, int num);
++
++RAND_METHOD sgxssl_rand_meth2 = {
++    NULL, /* seed */
++    get_sgx_rand_bytes,
++    NULL, /* cleanup */
++    NULL, /* add */
++    get_sgx_rand_bytes,
++    sgx_rand_status,
++};
++
+ RAND_METHOD rand_meth = {
+     drbg_seed,
+     drbg_bytes,
+@@ -1155,5 +1167,6 @@ RAND_METHOD rand_meth = {
+ 
+ RAND_METHOD *RAND_OpenSSL(void)
+ {
+-    return &rand_meth;
++    return &sgxssl_rand_meth2;
+ }
++
+diff --git a/crypto/rand/rand_lib.c b/crypto/rand/rand_lib.c
+index d8639c4..2c0f667 100644
+--- a/crypto/rand/rand_lib.c
++++ b/crypto/rand/rand_lib.c
+@@ -17,6 +17,41 @@
+ #include "rand_lcl.h"
+ #include "e_os.h"
+ 
++static int sgx_read_rand(uint8_t *buf, size_t size)
++{
++    uint32_t i;
++    for(i=0;i<(uint32_t)size;++i){
++        buf[i]=(uint8_t)rand();
++    }
++    return 0;
++}
++
++static int sgxssl_read_rand(unsigned char *rand_buf, int length_in_bytes) {
++
++  int ret;
++
++  if (rand_buf == NULL || length_in_bytes <= 0) {
++    return 1;
++  }
++
++  ret = sgx_read_rand(rand_buf, length_in_bytes);
++  if (ret != 0) {
++    return 1;
++  }
++
++  return 0;
++}
++
++int sgx_rand_status(void) { return 1; }
++
++int get_sgx_rand_bytes(unsigned char *buf, int num) {
++  if (sgxssl_read_rand(buf, num) == 0) {
++    return 1;
++  } else {
++    return 0;
++  }
++}
++
+ #ifndef OPENSSL_NO_ENGINE
+ /* non-NULL if default_RAND_meth is ENGINE-provided */
+ static ENGINE *funct_ref;
+@@ -733,35 +768,27 @@ int RAND_set_rand_method(const RAND_METHOD *meth)
+     CRYPTO_THREAD_unlock(rand_meth_lock);
+     return 1;
+ }
++int sgx_rand_status(void);
++int get_sgx_rand_bytes(unsigned char *buf, int num);
++
++RAND_METHOD sgxssl_rand_meth = {
++    NULL,                       /* seed */
++    get_sgx_rand_bytes,
++    NULL,                       /* cleanup */
++    NULL,                       /* add */
++    get_sgx_rand_bytes,
++    sgx_rand_status,
++};
+ 
+ const RAND_METHOD *RAND_get_rand_method(void)
+ {
+-    const RAND_METHOD *tmp_meth = NULL;
+-
+-    if (!RUN_ONCE(&rand_init, do_rand_init))
+-        return NULL;
+-
+-    CRYPTO_THREAD_write_lock(rand_meth_lock);
+-    if (default_RAND_meth == NULL) {
+-#ifndef OPENSSL_NO_ENGINE
+-        ENGINE *e;
+-
+-        /* If we have an engine that can do RAND, use it. */
+-        if ((e = ENGINE_get_default_RAND()) != NULL
+-                && (tmp_meth = ENGINE_get_RAND(e)) != NULL) {
+-            funct_ref = e;
+-            default_RAND_meth = tmp_meth;
+-        } else {
+-            ENGINE_finish(e);
+-            default_RAND_meth = &rand_meth;
+-        }
+-#else
+-        default_RAND_meth = &rand_meth;
+-#endif
++    //Default SGXSSL will always use RDRAND engine (sgx_get_rand()).
++    //Thread lock removed due to performance drop it cause. (Lock mechanism result many enclave EENTER/EEXIT)
++    //
++    if (!default_RAND_meth) {
++        default_RAND_meth = &sgxssl_rand_meth;
+     }
+-    tmp_meth = default_RAND_meth;
+-    CRYPTO_THREAD_unlock(rand_meth_lock);
+-    return tmp_meth;
++    return default_RAND_meth;
+ }
+ 
+ #ifndef OPENSSL_NO_ENGINE
+@@ -857,3 +884,4 @@ int RAND_status(void)
+         return meth->status();
+     return 0;
+ }
++
+-- 
+2.7.4
+
