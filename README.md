@@ -19,8 +19,9 @@ make
 make install
 ```
 ## Build and install the same version of MUSL used in Open Enclave
-cd ~/openenclave-openssl/openssl
+
 ```bash
+cd ~/openenclave-openssl/openssl
 git am  ../0001-Get-openssl-to-build-against-MUSL-headers.-Use-SGX-r.patch
 ./config --with-rand-seed=none no-idea no-mdc2 no-rc5 no-rc4 no-bf no-ec2m no-camellia no-cast no-srp no-hw no-dso no-shared no-ssl3 no-md2 no-md4 no-afalgeng -D_FORTIFY_SOURCE=2 -DGETPID_IS_MEANINGLESS --prefix=/opt/oe-openssl CC=/opt/musl/bin/musl-gcc
 make all install
