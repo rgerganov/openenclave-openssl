@@ -27,6 +27,21 @@ git am  ../0001-Get-openssl-to-build-against-MUSL-headers.-Use-SGX-r.patch
 make all install
 ```
 
+## Build and install the right branch of openenclave and a patch
+```bash
+git clone https://github.com/microsoft/openenclave.git oe_patched
+cd oe_patched
+git checkout johnkord-openssl_and_curl #Includes openssl built as part of OE SDK
+git reset 2c157d6 --hard #Discard John's changes to build openssl as part of OE SDK, we are now off of an older version of featureio2 branch and has socket and file APIs
+git am ~/openenclave-openssl/openssl/0001-Add-oe_once-recursive-lock.patch #Apply a patch to allow a recursive lock
+mkdir build
+cd build
+cmake ..
+make
+cmake -DCMAKE_INSTALL_PREFIX=/opt/openenclave_patched ..
+sudo make install
+```
+
 ## Build the sample
 ```bash
 cd ~/openenclave-openssl/sample
