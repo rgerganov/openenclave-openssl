@@ -1,15 +1,138 @@
-From 40e093d747f267a66a2d00333cf5d5e083500eea Mon Sep 17 00:00:00 2001
+From b13f4b855fa4fb2d4d833519ade9f2d79fb963cd Mon Sep 17 00:00:00 2001
 From: radhikaj <radhikaj@microsoft.com>
 Date: Tue, 21 May 2019 21:42:19 +0000
 Subject: [PATCH] Get openssl to build against MUSL headers. Use SGX rand
  functions
 
+Change pkgconfig files generated to have _oe_enclave suffixes
 ---
- crypto/mem_sec.c       |  2 +-
- crypto/rand/drbg_lib.c | 15 +++++++++-
- crypto/rand/rand_lib.c | 78 ++++++++++++++++++++++++++++++++++----------------
- 3 files changed, 68 insertions(+), 27 deletions(-)
+ Configurations/unix-Makefile.tmpl | 50 ++++++++++++-------------
+ crypto/mem_sec.c                  |  2 +-
+ crypto/rand/drbg_lib.c            | 15 +++++++-
+ crypto/rand/rand_lib.c            | 78 ++++++++++++++++++++++++++-------------
+ 4 files changed, 93 insertions(+), 52 deletions(-)
 
+diff --git a/Configurations/unix-Makefile.tmpl b/Configurations/unix-Makefile.tmpl
+index 288b792..3801a94 100644
+--- a/Configurations/unix-Makefile.tmpl
++++ b/Configurations/unix-Makefile.tmpl
+@@ -348,7 +348,7 @@ LANG=C
+ {- dependmagic('build_programs'); -}: build_programs_nodep
+ 
+ build_generated: $(GENERATED_MANDATORY)
+-build_libs_nodep: libcrypto.pc libssl.pc openssl.pc
++build_libs_nodep: libcrypto_oe_enclave.pc libssl_oe_enclave.pc openssl_oe_enclave.pc
+ build_engines_nodep: $(ENGINES)
+ build_programs_nodep: $(PROGRAMS) $(SCRIPTS)
+ 
+@@ -419,7 +419,7 @@ clean: libclean
+ 	$(RM) core
+ 	$(RM) tags TAGS doc-nits
+ 	$(RM) -r test/test-runs
+-	$(RM) openssl.pc libcrypto.pc libssl.pc
++	$(RM) openssl_oe_enclave.pc libcrypto_oe_enclave.pc libssl_oe_enclave.pc
+ 	-$(RM) `find . -name .git -prune -o -type l -print`
+ 	$(RM) $(TARFILE)
+ 
+@@ -554,15 +554,15 @@ install_dev: install_runtime_libs
+ 	done
+ 	@ : {- output_on() if $disabled{shared}; "" -}
+ 	@$(PERL) $(SRCDIR)/util/mkdir-p.pl $(DESTDIR)$(libdir)/pkgconfig
+-	@$(ECHO) "install libcrypto.pc -> $(DESTDIR)$(libdir)/pkgconfig/libcrypto.pc"
+-	@cp libcrypto.pc $(DESTDIR)$(libdir)/pkgconfig
+-	@chmod 644 $(DESTDIR)$(libdir)/pkgconfig/libcrypto.pc
+-	@$(ECHO) "install libssl.pc -> $(DESTDIR)$(libdir)/pkgconfig/libssl.pc"
+-	@cp libssl.pc $(DESTDIR)$(libdir)/pkgconfig
+-	@chmod 644 $(DESTDIR)$(libdir)/pkgconfig/libssl.pc
+-	@$(ECHO) "install openssl.pc -> $(DESTDIR)$(libdir)/pkgconfig/openssl.pc"
+-	@cp openssl.pc $(DESTDIR)$(libdir)/pkgconfig
+-	@chmod 644 $(DESTDIR)$(libdir)/pkgconfig/openssl.pc
++	@$(ECHO) "install libcrypto_oe_enclave.pc -> $(DESTDIR)$(libdir)/pkgconfig/libcrypto_oe_enclave.pc"
++	@cp libcrypto_oe_enclave.pc $(DESTDIR)$(libdir)/pkgconfig
++	@chmod 644 $(DESTDIR)$(libdir)/pkgconfig/libcrypto_oe_enclave.pc
++	@$(ECHO) "install libssl_oe_enclave.pc -> $(DESTDIR)$(libdir)/pkgconfig/libssl_oe_enclave.pc"
++	@cp libssl_oe_enclave.pc $(DESTDIR)$(libdir)/pkgconfig
++	@chmod 644 $(DESTDIR)$(libdir)/pkgconfig/libssl_oe_enclave.pc
++	@$(ECHO) "install openssl_oe_enclave.pc -> $(DESTDIR)$(libdir)/pkgconfig/openssl_oe_enclave.pc"
++	@cp openssl_oe_enclave.pc $(DESTDIR)$(libdir)/pkgconfig
++	@chmod 644 $(DESTDIR)$(libdir)/pkgconfig/openssl_oe_enclave.pc
+ 
+ uninstall_dev: uninstall_runtime_libs
+ 	@$(ECHO) "*** Uninstalling development files"
+@@ -602,9 +602,9 @@ uninstall_dev: uninstall_runtime_libs
+ 		: {- output_on() unless windowsdll(); "" -}; \
+ 	done
+ 	@ : {- output_on() if $disabled{shared}; "" -}
+-	$(RM) $(DESTDIR)$(libdir)/pkgconfig/libcrypto.pc
+-	$(RM) $(DESTDIR)$(libdir)/pkgconfig/libssl.pc
+-	$(RM) $(DESTDIR)$(libdir)/pkgconfig/openssl.pc
++	$(RM) $(DESTDIR)$(libdir)/pkgconfig/libcrypto_oe_enclave.pc
++	$(RM) $(DESTDIR)$(libdir)/pkgconfig/libssl_oe_enclave.pc
++	$(RM) $(DESTDIR)$(libdir)/pkgconfig/openssl_oe_enclave.pc
+ 	-$(RMDIR) $(DESTDIR)$(libdir)/pkgconfig
+ 	-$(RMDIR) $(DESTDIR)$(libdir)
+ 
+@@ -848,8 +848,8 @@ FORCE:
+ 
+ # Building targets ###################################################
+ 
+-libcrypto.pc libssl.pc openssl.pc: configdata.pm $(LIBS) {- join(" ",map { shlib_simple($_) } @{$unified_info{libraries}}) -}
+-libcrypto.pc:
++libcrypto_oe_enclave.pc libssl_oe_enclave.pc openssl_oe_enclave.pc: configdata.pm $(LIBS) {- join(" ",map { shlib_simple($_) } @{$unified_info{libraries}}) -}
++libcrypto_oe_enclave.pc:
+ 	@ ( echo 'prefix=$(INSTALLTOP)'; \
+ 	    echo 'exec_prefix=$${prefix}'; \
+ 	    if [ -n "$(LIBDIR)" ]; then \
+@@ -860,14 +860,14 @@ libcrypto.pc:
+ 	    echo 'includedir=$${prefix}/include'; \
+ 	    echo 'enginesdir=$${libdir}/engines-{- $sover_dirname -}'; \
+ 	    echo ''; \
+-	    echo 'Name: OpenSSL-libcrypto'; \
++	    echo 'Name: OpenSSL-libcrypto_oe_enclave'; \
+ 	    echo 'Description: OpenSSL cryptography library'; \
+ 	    echo 'Version: '$(VERSION); \
+ 	    echo 'Libs: -L$${libdir} -lcrypto'; \
+ 	    echo 'Libs.private: $(LIB_EX_LIBS)'; \
+-	    echo 'Cflags: -I$${includedir}' ) > libcrypto.pc
++	    echo 'Cflags: -I$${includedir}' ) > libcrypto_oe_enclave.pc
+ 
+-libssl.pc:
++libssl_oe_enclave.pc:
+ 	@ ( echo 'prefix=$(INSTALLTOP)'; \
+ 	    echo 'exec_prefix=$${prefix}'; \
+ 	    if [ -n "$(LIBDIR)" ]; then \
+@@ -877,14 +877,14 @@ libssl.pc:
+ 	    fi; \
+ 	    echo 'includedir=$${prefix}/include'; \
+ 	    echo ''; \
+-	    echo 'Name: OpenSSL-libssl'; \
++	    echo 'Name: OpenSSL-libssl_oe_enclave'; \
+ 	    echo 'Description: Secure Sockets Layer and cryptography libraries'; \
+ 	    echo 'Version: '$(VERSION); \
+-	    echo 'Requires.private: libcrypto'; \
++	    echo 'Requires.private: libcrypto_oe_enclave'; \
+ 	    echo 'Libs: -L$${libdir} -lssl'; \
+-	    echo 'Cflags: -I$${includedir}' ) > libssl.pc
++	    echo 'Cflags: -I$${includedir}' ) > libssl_oe_enclave.pc
+ 
+-openssl.pc:
++openssl_oe_enclave.pc:
+ 	@ ( echo 'prefix=$(INSTALLTOP)'; \
+ 	    echo 'exec_prefix=$${prefix}'; \
+ 	    if [ -n "$(LIBDIR)" ]; then \
+@@ -894,10 +894,10 @@ openssl.pc:
+ 	    fi; \
+ 	    echo 'includedir=$${prefix}/include'; \
+ 	    echo ''; \
+-	    echo 'Name: OpenSSL'; \
++	    echo 'Name: OpenSSL_oe_enclave'; \
+ 	    echo 'Description: Secure Sockets Layer and cryptography libraries and tools'; \
+ 	    echo 'Version: '$(VERSION); \
+-	    echo 'Requires: libssl libcrypto' ) > openssl.pc
++	    echo 'Requires: libssl_oe_enclave libcrypto_oe_enclave' ) > openssl_oe_enclave.pc
+ 
+ configdata.pm: $(SRCDIR)/Configure $(SRCDIR)/config {- join(" ", @{$config{build_file_templates}}, @{$config{build_infos}}, @{$config{conf_files}}) -}
+ 	@echo "Detected changed: $?"
 diff --git a/crypto/mem_sec.c b/crypto/mem_sec.c
 index 9e0f670..3111da7 100644
 --- a/crypto/mem_sec.c
