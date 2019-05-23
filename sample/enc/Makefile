@@ -38,7 +38,7 @@ sign:
 	oesign sign -e openssl_server_enc -c openssl_server.conf -k private.pem
 
 clean:
-	rm -f enc.o openssl_server_enc openssl_server_enc.signed private.pem public.pem openssl_server_t.o openssl_server_t.h openssl_server_t.c openssl_server_args.h ../key.pem ../cert.pem
+	rm -f enc.o openssl_server_enc openssl_server_enc.signed private.pem public.pem openssl_server_t.o openssl_server_t.h openssl_server_t.c openssl_server_args.h ../key.pem ../cert.pem ssl_stubs.o
 
 keys:
 	openssl genrsa -out private.pem -3 3072
