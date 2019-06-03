@@ -44,6 +44,7 @@ sudo make install
 
 ## Build the sample
 ```bash
+export PKG_CONFIG_PATH=${PKG_CONFIG_PATH}:/opt/oe-openssl/lib/pkgconfig
 cd ~/openenclave-openssl/sample
 make
 ```
