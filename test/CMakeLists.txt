@@ -4,6 +4,8 @@ project("OpenEnclave for OpenSSL Tests" LANGUAGES C CXX)
 
 find_package(OpenEnclave CONFIG REQUIRED)
 
+enable_testing()
+
 set(CMAKE_CXX_STANDARD 11)
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/enc")
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}")
@@ -22,8 +24,6 @@ add_subdirectory(host)
 
 
 foreach(testcase ${alltests})
-    message("test here")
     get_testcase_name(${testcase} name "../../openssl/test/")
-    message("test here2")
-    add_enclave_test(host/openssl_test enc/test-${name}_enc)
+    add_enclave_test(${name}_test host/openssl_host enc/openssl-${name}_enc)
 endforeach(testcase)

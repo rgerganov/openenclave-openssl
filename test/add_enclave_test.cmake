@@ -59,7 +59,8 @@ if (ADD_WINDOWS_ENCLAVE_TESTS)
         add_test(NAME ${TEST_NAME} COMMAND $<TARGET_FILE:${HOST_FILE}> ${CMAKE_CURRENT_BINARY_DIR}/${TEST_HOSTSUBPATH}/${TEST_ENCFILE} ${ARGN})
 
 elseif (UNIX OR USE_CLANGW)
-        add_test(NAME ${TEST_NAME} COMMAND $<TARGET_FILE:${HOST_FILE}> $<TARGET_FILE:${ENC_FILE}> ${ARGN})
+        #add_test(NAME ${TEST_NAME} COMMAND $<TARGET_FILE:${HOST_FILE}> $<TARGET_FILE:${ENC_FILE}> ${ARGN})
+        add_test(${TEST_NAME} ${HOST_FILE} ${ENC_FILE})
 endif()
 
 endfunction(add_enclave_test)
