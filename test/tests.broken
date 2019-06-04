@@ -1,0 +1,49 @@
+../../openssl/test/aborttest.c
+../../openssl/test/asynciotest.c
+../../openssl/test/asn1_time_test.c #Absence of localtime link time
+../../openssl/test/bioprinttest.c #Segfault
+../../openssl/test/bntest.c #Child aborted
+../../openssl/test/ct_test.c #Unresolved external difftime link time
+../../openssl/test/cipher_overhead_test.c #Cannot find stdatomic.h compile time
+../../openssl/test/clienthellotest.c #Child aborted
+../../openssl/test/cmsapitest.c #Child aborted
+../../openssl/test/conf_include_test.c #Child aborted
+../../openssl/test/curve448_internal_test.c #Child aborted
+../../openssl/test/drbgtest.c #Cannot find stdatomic.h compile time
+../../openssl/test/drbg_cavs_test.c  #Cannot find stdatomic.h compile time
+../../openssl/test/dtls_mtu_test.c #Cannot find stdatomic.h compile time
+../../openssl/test/d2i_test.c #Child aborted
+../../openssl/test/danetest.c #Child aborted
+../../openssl/test/dtlstest.c #Child aborted
+../../openssl/test/tls13secretstest.c #Compile time stdatomic.h 
+../../openssl/test/ssl_test.c #Needs handshaker_helper.c which needs stdatomic.h
+../../openssl/test/sslapitest.c  #Compile time stdatomic.h 
+../../openssl/test/md2test.c Configured with no md2c2 -> Needs more investigation
+../../openssl/test/mdc2_internal_test.c #Configured with no md2c2
+../../openssl/test/mdc2test.c #Configured with no md2c2
+../../openssl/test/evp_extra_test.c #Compile time stdatomic.h
+../../openssl/test/ec_internal_test.c #Compile time stdatomic.h
+../../openssl/test/ssl_cert_table_internal_test.c #Compile time stdatomic.h
+../../openssl/test/ssltest_old.c #link time clock
+../../openssl/test/uitest.c #no apps.h compile time
+../../openssl/test/tls13encryptiontest.c #Compile time stdatomic.h
+../../openssl/test/ecstresstest.c #Segfault
+../../openssl/test/evp_test.c #Child aborted
+../../openssl/test/fatalerrtest.c #Child aborted
+../../openssl/test/gosttest.c #Child aborted
+../../openssl/test/lhash_test.c #Child aborted
+../../openssl/test/ocspapitest.c #Child aborted
+../../openssl/test/secmemtest.c #Segfault
+../../openssl/test/servername_test.c #Child aborted
+../../openssl/test/shlibloadtest.c #Child aborted
+../../openssl/test/sslbuffertest.c #Child aborted
+../../openssl/test/sslcorrupttest.c #Child aborted
+../../openssl/test/ssl_test_ctx_test.c #Child aborted
+../../openssl/test/sysdefaulttest.c #Child aborted
+../../openssl/test/threadstest.c #Child aborted
+../../openssl/test/tls13ccstest.c #Child aborted
+../../openssl/test/v3ext.c #Child aborted
+../../openssl/test/verify_extra_test.c #Child aborted
+../../openssl/test/x509aux.c #Child aborted
+../../openssl/test/x509_check_cert_pkey_test.c #Child aborted
+../../openssl/test/x509_dup_cert_test.c #Child aborted
