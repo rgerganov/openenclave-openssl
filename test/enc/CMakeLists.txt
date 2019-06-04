@@ -105,6 +105,8 @@ add_library(openssl-support
    ../../openssl/test/testutil/tap_bio.c
    ../../openssl/test/testutil/test_cleanup.c
    ../../openssl/test/testutil/tests.c
+   ../../openssl/test/ssltestlib.c
+   ../../openssl/test/ssl_test_ctx.c
    ${TESTFILE}
     )
 
@@ -126,25 +128,19 @@ endif ()
 
 target_link_libraries(openssl-support PUBLIC /opt/openenclave-featureio2/lib/openenclave/enclave/liboecpio.a /opt/openenclave-featureio2/lib/openenclave/enclave/liboesgxfsenclave.a  openenclave::oeenclave openenclave::oelibc)
 target_link_libraries(openssl-support INTERFACE -Wl,--undefined=Test)
-target_include_directories(openssl-support PRIVATE /home/radhikaj/openenclave-openssl/openssl/include/openssl /home/radhikaj/openenclave-openssl/openssl/ /home/radhikaj/openenclave-openssl/openssl/include/ ../../openssl/include/openssl ../../openssl/include/internal ../../openssl/test)
+
+target_include_directories(openssl-support PRIVATE ../../openssl/include/openssl ../../openssl/include ../../openssl/include/internal ../../openssl/test ../../openssl ../../openssl/crypto/include ../../openssl/crypto/ec)
+
 add_library(openssl_imported IMPORTED STATIC)
     set_target_properties(openssl_imported PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../openssl/libssl.a)
     add_library(openssl_crypto_imported IMPORTED STATIC)
     set_target_properties(openssl_crypto_imported PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../openssl/libcrypto.a)
 
 function(add_openssl_test_enc NAME TESTFILE)
-    add_enclave(TARGET openssl-${NAME}_enc CXX SOURCES
-        ${TESTFILE} enc.cpp ${CMAKE_CURRENT_BINARY_DIR}/openssl_t.c ssl_stubs.c)
+    add_enclave(TARGET openssl-${NAME}_enc SOURCES
+        ${TESTFILE} enc.c ${CMAKE_CURRENT_BINARY_DIR}/openssl_t.c ssl_stubs.c)
         
-    target_include_directories(openssl-${NAME}_enc PRIVATE ../../openssl/include/openssl ../../openssl/include ../../openssl/include/internal ../../openssl/test)
-
-    #target_include_directories(openssl-${NAME}_enc PRIV ATE
-     #   ..
-      #  ${PROJECT_SOURCE_DIR}/3rdparty/libcxx/libcxx/test
-       # ${PROJECT_SOURCE_DIR}/3rdparty/libcxx/libcxx/test/support
-        #${PROJECT_SOURCE_DIR}/3rdparty/libcxx/libcxx/fuzzing
-        #${PROJECT_SOURCE_DIR}/3rdparty/libcxx/libcxx/src/filesystem
-        #)
+    target_include_directories(openssl-${NAME}_enc PRIVATE ../../openssl/include/openssl ../../openssl/include ../../openssl/include/internal ../../openssl/test ../../openssl ../../openssl/crypto/include ../../openssl/crypto/ec/curve448/ ../../openssl/crypto/ec)
 
       target_compile_options(openssl-${NAME}_enc PRIVATE
         # These are third-party tests, so we don't care about their warnings.
@@ -156,7 +152,6 @@ function(add_openssl_test_enc NAME TESTFILE)
         -UNDEBUG
         )
 
-    #target_compile_definitions(libcxxtest-${NAME}_enc PRIVATE -DWITH_MAIN -D__TEST__="${CXXFILE}")
     target_include_directories(openssl-${NAME}_enc PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
     
     target_link_libraries(openssl-${NAME}_enc PUBLIC openssl-support)

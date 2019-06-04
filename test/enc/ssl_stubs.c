@@ -170,3 +170,9 @@ gid_t getegid(void)
   return gid;
 }
 
+
+int usleep(useconds_t usec)
+{
+  return sleep(usec/1000);
+}
+
