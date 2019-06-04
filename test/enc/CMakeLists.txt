@@ -127,6 +127,10 @@ endif ()
 target_link_libraries(openssl-support PUBLIC /opt/openenclave-featureio2/lib/openenclave/enclave/liboecpio.a /opt/openenclave-featureio2/lib/openenclave/enclave/liboesgxfsenclave.a  openenclave::oeenclave openenclave::oelibc)
 target_link_libraries(openssl-support INTERFACE -Wl,--undefined=Test)
 target_include_directories(openssl-support PRIVATE /home/radhikaj/openenclave-openssl/openssl/include/openssl /home/radhikaj/openenclave-openssl/openssl/ /home/radhikaj/openenclave-openssl/openssl/include/ ../../openssl/include/openssl ../../openssl/include/internal ../../openssl/test)
+add_library(openssl_imported IMPORTED STATIC)
+    set_target_properties(openssl_imported PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../openssl/libssl.a)
+    add_library(openssl_crypto_imported IMPORTED STATIC)
+    set_target_properties(openssl_crypto_imported PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../openssl/libcrypto.a)
 
 function(add_openssl_test_enc NAME TESTFILE)
     add_enclave(TARGET openssl-${NAME}_enc CXX SOURCES
@@ -156,10 +160,6 @@ function(add_openssl_test_enc NAME TESTFILE)
     target_include_directories(openssl-${NAME}_enc PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
     
     target_link_libraries(openssl-${NAME}_enc PUBLIC openssl-support)
-    add_library(openssl_imported IMPORTED STATIC)
-    set_target_properties(openssl_imported PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../openssl/libssl.a)
-    add_library(openssl_crypto_imported IMPORTED STATIC)
-    set_target_properties(openssl_crypto_imported PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/../openssl/libcrypto.a)
     target_link_libraries(openssl-${NAME}_enc PUBLIC openssl_imported openssl_crypto_imported)    
     target_link_libraries(openssl-${NAME}_enc PUBLIC  /opt/openenclave-featureio2/lib/openenclave/enclave/liboecpio.a /opt/openenclave-featureio2/lib/openenclave/enclave/liboesgxfsenclave.a   openenclave::oeenclave openenclave::oelibcxx)
     
