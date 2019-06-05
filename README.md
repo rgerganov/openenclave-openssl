@@ -40,6 +40,7 @@ cmake ..
 make
 cmake -DCMAKE_INSTALL_PREFIX=/opt/openenclave-featureio2 ..
 sudo make install
+. /opt/openenclave-featureio2/share/openenclave/openenclaverc
 ```
 
 ## Build the sample
@@ -58,3 +59,4 @@ host/openssl_serverhost enc/openssl_server_enc.signed
 ```bash
 openssl s_client -connect localhost:4433
 ```
+
