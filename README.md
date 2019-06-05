@@ -38,7 +38,7 @@ mkdir build
 cd build
 cmake ..
 make
-cmake -DCMAKE_INSTALL_PREFIX=/opt/openenclave_patched ..
+cmake -DCMAKE_INSTALL_PREFIX=/opt/openenclave-featureio2 ..
 sudo make install
 ```
 
