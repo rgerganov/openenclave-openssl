@@ -4,16 +4,6 @@ add_custom_command(OUTPUT openssl_t.h openssl_t.c openssl_args.h
 DEPENDS ${CMAKE_SOURCE_DIR}/openssl.edl
 COMMAND openenclave::oeedger8r --trusted ${CMAKE_SOURCE_DIR}/openssl.edl)
   
-function(get_testcase_name FILENAME NAMEVAR PREFIX)
-        string(REGEX REPLACE "\.c(pp)?$" "" n ${FILENAME})
-        if (NOT ${PREFIX} STREQUAL "")
-            string(REGEX REPLACE ${PREFIX} "" n ${n})
-        endif()
-        string(REGEX REPLACE "[/=]" "_" n ${n})
-        string(REGEX REPLACE "[\!]" "-" n ${n})
-        set(${NAMEVAR} ${n} PARENT_SCOPE)
-endfunction(get_testcase_name)
-
 function(add_enclave)
    set(options CXX)
    set(oneValueArgs TARGET CONFIG KEY)
