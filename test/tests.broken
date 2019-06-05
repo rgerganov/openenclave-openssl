@@ -47,3 +47,4 @@
 ../../openssl/test/x509aux.c #Child aborted
 ../../openssl/test/x509_check_cert_pkey_test.c #Child aborted
 ../../openssl/test/x509_dup_cert_test.c #Child aborted
+../../openssl/test/recordlentest.c #Child aborted

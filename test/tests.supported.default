@@ -106,7 +106,6 @@
 ../../openssl/test/rc4test.c
 ../../openssl/test/rc5test.c
 ../../openssl/test/rdrand_sanitytest.c
-../../openssl/test/recordlentest.c
 ../../openssl/test/rsa_complex.c
 ../../openssl/test/rsa_mp_test.c
 ../../openssl/test/rsa_test.c

@@ -9,7 +9,6 @@ enable_testing()
 set(CMAKE_CXX_STANDARD 11)
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/enc")
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}")
-message(STATUS "RADHIKAJ CMAKE_MODULE_PATH"  ${CMAKE_MODULE_PATH})
 include(get_testcase_name)
 include(add_enclave_test)
 
