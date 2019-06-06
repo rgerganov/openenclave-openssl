@@ -128,7 +128,7 @@ add_library(openssl_imported IMPORTED STATIC)
 
 function(add_openssl_test_enc NAME TESTFILE)
     add_enclave(TARGET openssl-${NAME}_enc SOURCES
-        ${TESTFILE} enc.c ${CMAKE_CURRENT_BINARY_DIR}/openssl_t.c ssl_stubs.c)
+        ${TESTFILE} enc.c ${CMAKE_CURRENT_BINARY_DIR}/openssl_t.c )
         
     target_include_directories(openssl-${NAME}_enc PRIVATE ../../openssl/include/openssl ../../openssl/include ../../openssl/include/internal ../../openssl/test ../../openssl ../../openssl/crypto/include ../../openssl/crypto/ec/curve448/ ../../openssl/crypto/ec)
 
