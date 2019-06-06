@@ -45,6 +45,6 @@
 ../../openssl/test/v3ext.c #Child aborted
 ../../openssl/test/verify_extra_test.c #Child aborted
 ../../openssl/test/x509aux.c #Child aborted
-../../openssl/test/x509_check_cert_pkey_test.c #Child aborted
-../../openssl/test/x509_dup_cert_test.c #Child aborted
-../../openssl/test/recordlentest.c #Child aborted
+../../openssl/test/x509_check_cert_pkey_test.c #Child aborted, expects cert argu,ents
+../../openssl/test/x509_dup_cert_test.c #Child aborted, expects cert arguments
+../../openssl/test/recordlentest.c #Child aborted, expects cert arguments
