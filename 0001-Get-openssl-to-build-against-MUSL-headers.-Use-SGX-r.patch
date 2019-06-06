@@ -1,16 +1,21 @@
-From b13f4b855fa4fb2d4d833519ade9f2d79fb963cd Mon Sep 17 00:00:00 2001
+From 25e23dd00e2a2918287b0aa9f424f2ef89aad471 Mon Sep 17 00:00:00 2001
 From: radhikaj <radhikaj@microsoft.com>
 Date: Tue, 21 May 2019 21:42:19 +0000
 Subject: [PATCH] Get openssl to build against MUSL headers. Use SGX rand
  functions
 
 Change pkgconfig files generated to have _oe_enclave suffixes
+
+Move SSL stubs.c to openssl
 ---
- Configurations/unix-Makefile.tmpl | 50 ++++++++++++-------------
- crypto/mem_sec.c                  |  2 +-
- crypto/rand/drbg_lib.c            | 15 +++++++-
- crypto/rand/rand_lib.c            | 78 ++++++++++++++++++++++++++-------------
- 4 files changed, 93 insertions(+), 52 deletions(-)
+ Configurations/unix-Makefile.tmpl |  50 +++++------
+ crypto/build.info                 |   2 +-
+ crypto/mem_sec.c                  |   2 +-
+ crypto/rand/drbg_lib.c            |  15 +++-
+ crypto/rand/rand_lib.c            |  78 +++++++++++------
+ crypto/ssl_stubs.c                | 171 ++++++++++++++++++++++++++++++++++++++
+ 6 files changed, 265 insertions(+), 53 deletions(-)
+ create mode 100644 crypto/ssl_stubs.c
 
 diff --git a/Configurations/unix-Makefile.tmpl b/Configurations/unix-Makefile.tmpl
 index 288b792..3801a94 100644
@@ -133,6 +138,19 @@ index 288b792..3801a94 100644
  
  configdata.pm: $(SRCDIR)/Configure $(SRCDIR)/config {- join(" ", @{$config{build_file_templates}}, @{$config{build_infos}}, @{$config{conf_files}}) -}
  	@echo "Detected changed: $?"
+diff --git a/crypto/build.info b/crypto/build.info
+index 2c619c6..0932ddb 100644
+--- a/crypto/build.info
++++ b/crypto/build.info
+@@ -3,7 +3,7 @@ SOURCE[../libcrypto]=\
+         cryptlib.c mem.c mem_dbg.c cversion.c ex_data.c cpt_err.c \
+         ebcdic.c uid.c o_time.c o_str.c o_dir.c o_fopen.c ctype.c \
+         threads_pthread.c threads_win.c threads_none.c getenv.c \
+-        o_init.c o_fips.c mem_sec.c init.c {- $target{cpuid_asm_src} -} \
++        o_init.c o_fips.c mem_sec.c init.c ssl_stubs.c {- $target{cpuid_asm_src} -} \
+         {- $target{uplink_aux_src} -}
+ EXTRA=  ../ms/uplink-x86.pl ../ms/uplink.c ../ms/applink.c \
+         x86cpuid.pl x86_64cpuid.pl ia64cpuid.S \
 diff --git a/crypto/mem_sec.c b/crypto/mem_sec.c
 index 9e0f670..3111da7 100644
 --- a/crypto/mem_sec.c
@@ -280,6 +298,183 @@ index d8639c4..2c0f667 100644
          return meth->status();
      return 0;
  }
++
+diff --git a/crypto/ssl_stubs.c b/crypto/ssl_stubs.c
+new file mode 100644
+index 0000000..82e0276
+--- /dev/null
++++ b/crypto/ssl_stubs.c
+@@ -0,0 +1,171 @@
++#include <string.h>
++#include <netdb.h>
++#include <sys/types.h>
++#include <unistd.h>
++#include <string.h>
++#include <errno.h>
++#include <pthread.h>
++
++#include <openssl/rand.h>
++
++#include <sys/select.h>
++#include <sys/poll.h>
++#include <string.h>
++#include <stdio.h>
++
++int __fprintf_chk(FILE * stream, int flag, const char * format)
++{
++  return fprintf(stream, flag, format);
++}
++
++struct passwd *getpwnam(const char *name);
++
++struct passwd *getpwuid(uid_t uid);
++
++int getpwnam_r(const char *name, struct passwd *pwd,
++            char *buf, size_t buflen, struct passwd **result);
++
++int getpwuid_r(uid_t uid, struct passwd *pwd,
++            char *buf, size_t buflen, struct passwd **result)
++{
++ return 0;
++}
++
++int __sprintf_chk()
++{
++ return 0;
++}
++
++void* __rawmemchr(const void* s, int c)
++{
++  return memchr(s, c, 10000000);
++}
++
++typedef long int __fd_mask;
++#define __NFDBITS   (8 * (int) sizeof (__fd_mask))
++
++
++typedef void (*sighandler_t)(int);
++
++sighandler_t signal(int signum, sighandler_t handler)
++{
++  return NULL;
++}
++
++int __poll(struct pollfd *fds, nfds_t nfds, int timeout)
++{
++return poll(fds, nfds, timeout);
++}
++
++int
++__poll_chk (struct pollfd *fds, nfds_t nfds, int timeout, __SIZE_TYPE__ fdslen)
++{
++return __poll (fds, nfds, timeout);
++}
++
++
++int getifaddrs(struct ifaddrs **ifap)
++{
++  return 0;
++}
++
++void freeifaddrs(struct ifaddrs *ifa)
++{
++  return;
++}
++
++long int __fdelt_chk (long int d)
++{
++
++  return d / __NFDBITS;
++}
++
++
++int sigaction(int signum, const struct sigaction *act, struct sigaction *oldact)
++{
++  return 0;
++}
++
++
++char *__strtok_r(char *str, const char *delim, char **saveptr)
++{
++	return strtok_r(str, delim, saveptr);
++}
++
++char *secure_getenv(const char *name)
++{
++    return getenv(name);
++}
++
++struct hostent *gethostbyname(const char *name)
++{
++    return NULL;
++}
++
++
++char *oe_gai_strerror(int err)
++{
++  char *str = strerror(err);
++
++  return str;
++}
++
++int getcontext(void *ucp)
++{
++  return -1;
++}
++
++int setcontext(const void *ucp)
++{
++  return -1;
++}
++
++void makecontext(void *ucp, void (*func)(), int argc, ...)
++{
++  return;
++}
++
++
++int mprotect(void *addr, size_t len, int prot) {
++  errno = EACCES;
++  return -1;
++}
++
++int madvise(void *addr, size_t len, int advice) {
++  return 0;
++}
++
++int mlock(const void *__addr, size_t __len) {
++  return 0;
++}
++
++
++int pthread_atfork(void (*prepare)(void), void (*parent)(void),
++       void (*child)(void))
++{
++  return EPERM;
++}
++
++int tcgetattr(int fd, struct termios *termios_p)
++{
++  return 0;
++}
++
++int tcsetattr(int fd, int optional_actions,
++              const struct termios *termios_p)
++{
++  return 0;
++}
++
++gid_t getgid(void)
++{
++  gid_t gid = {0};
++  return gid;
++}
++
++gid_t getegid(void)
++{
++  gid_t gid = {0};
++  return gid;
++}
 +
 -- 
 2.7.4
