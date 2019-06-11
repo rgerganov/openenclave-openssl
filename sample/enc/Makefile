@@ -32,7 +32,8 @@ build:
 
         #Note liboecpio and liboesgxfsenclave are included here since they are not in the pc file built by the branch this was built on
         #This will be removed when file and socket POSIX APIs are available in the master branch of Open Enclave.
-	$(CC) -o openssl_server_enc ./openssl_server_t.o enc.o $(shell pkg-config openssl_oe_enclave --libs) /opt/openenclave-featureio2/lib/openenclave/enclave/liboecpio.a /opt/openenclave-featureio2/lib/openenclave/enclave/liboesgxfsenclave.a $(LDFLAGS)
+
+	$(CC) -o openssl_server_enc ./openssl_server_t.o enc.o $(shell pkg-config openssl_oe_enclave --libs) $(LDFLAGS) -loehostsock -loehostfs -loehostresolver
 
 sign:
 	oesign sign -e openssl_server_enc -c openssl_server.conf -k private.pem

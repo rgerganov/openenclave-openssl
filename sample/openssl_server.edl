@@ -5,6 +5,6 @@ enclave {
     include "sys/uio.h"
 
     trusted {
-        public void test();
+        public void run_server( [string, in] char* cwd );
     };
 };

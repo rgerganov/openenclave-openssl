@@ -8,9 +8,6 @@
 #include <sys/mount.h>
 #include <openenclave/enclave.h>
 #include <malloc.h>
-//#include <raise.h>
-//#include <rsa.h>
-//#include <sha.h>
 #include <syscall.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -40,26 +37,26 @@ int create_socket(int port)
 
     s = socket(AF_INET, SOCK_STREAM, 0);
     if (s < 0) {
-	printf("Unable to create socket");
-	exit(EXIT_FAILURE);
+        printf("Unable to create socket");
+        exit(EXIT_FAILURE);
     }
 
     if (bind(s, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-	printf("Unable to bind");
-	exit(EXIT_FAILURE);
+        printf("Unable to bind");
+        exit(EXIT_FAILURE);
     }
 
     if (listen(s, 1) < 0) {
-	printf("Unable to listen");
-	exit(EXIT_FAILURE);
+        printf("Unable to listen");
+        exit(EXIT_FAILURE);
     }
 
     return s;
 }
 
 void init_openssl()
-{ 
-    SSL_load_error_strings();	
+{
+    SSL_load_error_strings();
     OpenSSL_add_ssl_algorithms();
 }
 
@@ -77,48 +74,66 @@ SSL_CTX *create_context()
 
     ctx = SSL_CTX_new(method);
     if (!ctx) {
-	printf("Unable to create SSL context");
-	exit(EXIT_FAILURE);
+        printf("Unable to create SSL context");
+        exit(EXIT_FAILURE);
     }
 
     return ctx;
 }
 
-void configure_context(SSL_CTX *ctx)
+void configure_context(SSL_CTX *ctx, char *cwd)
 {
+    char cert_path[PATH_MAX];
+    char key_path[PATH_MAX];
+
+    sprintf(cert_path, "%s%s", cwd, "/cert.pem");
+    sprintf(key_path, "%s%s", cwd, "/key.pem");
+
+
     SSL_CTX_set_ecdh_auto(ctx, 1);
 
     /* Set the key and cert */
-    if (SSL_CTX_use_certificate_file(ctx, "cert.pem", SSL_FILETYPE_PEM) <= 0) {
-	exit(EXIT_FAILURE);
+    if (SSL_CTX_use_certificate_file(ctx, cert_path, SSL_FILETYPE_PEM) <= 0) {
+        exit(EXIT_FAILURE);
     }
 
-    if (SSL_CTX_use_PrivateKey_file(ctx, "key.pem", SSL_FILETYPE_PEM) <= 0 ) {
-	exit(EXIT_FAILURE);
+    if (SSL_CTX_use_PrivateKey_file(ctx, key_path, SSL_FILETYPE_PEM) <= 0) {
+        exit(EXIT_FAILURE);
     }
 }
 
-void test()
+void run_server(char *cwd)
 {
-    oe_enable_feature(OE_FEATURE_HOST_FILES);
-    oe_enable_feature(OE_FEATURE_HOST_SOCKETS);
-    oe_enable_feature(OE_FEATURE_HOST_RESOLVER);
-    oe_enable_feature(OE_FEATURE_POLLING);
-    mount(".", "/", "hostfs", MS_RDONLY, NULL);
-
     int sock;
     SSL_CTX *ctx;
+
+    if (OE_OK != oe_load_module_host_socket_interface())
+    {
+        printf("Error loading host socket interface\n");
+    }
+    if (OE_OK != oe_load_module_host_resolver())
+    {
+        printf("Error loading host resolver\n");
+    }
+    if (OE_OK != oe_load_module_host_file_system())
+    {
+        printf("Error loading host file system\n");
+    }
+    if (mount("/", "/", "oe_host_file_system", MS_RDONLY, NULL))
+    {
+        printf("Error mounting host file system\n");
+    }
 
     init_openssl();
     ctx = create_context();
 
-    configure_context(ctx);
+    configure_context(ctx, cwd);
 
     sock = create_socket(4433);
-    
+
 
     /* Handle connections */
-    while(1) {
+    while (1) {
         struct sockaddr_in addr;
         uint len = sizeof(addr);
         SSL *ssl;
@@ -126,7 +141,7 @@ void test()
 
         int client = accept(sock, (struct sockaddr*)&addr, &len);
         printf("accepted\n");
-	if (client < 0) {
+        if (client < 0) {
             printf("Unable to accept");
             exit(EXIT_FAILURE);
         }
@@ -137,7 +152,7 @@ void test()
         if (SSL_accept(ssl) <= 0) {
         }
         else {
-            char buffer[100000] = {0};
+            char buffer[100000] = { 0 };
             size_t readbytes = 0;
             SSL_read_ex(ssl, buffer, 100000, &readbytes);
             SSL_write(ssl, reply, (int)strlen(reply));

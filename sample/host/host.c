@@ -18,6 +18,11 @@ int main(int argc, const char* argv[])
 {
     oe_result_t result;
     oe_enclave_t* enclave = NULL;
+    char cwd[PATH_MAX];
+    if (!getcwd(cwd, sizeof(cwd))) {
+       perror("getcwd() error");
+       return 1;
+    }
 
     if (argc != 2)
     {
@@ -32,8 +37,9 @@ int main(int argc, const char* argv[])
     {
         fprintf(stderr, "oe_create_crypto_enclave(): result=%u", result);
     }
+    
 
-    if ((result = test(enclave)) != OE_OK)
+    if ((result = run_server(enclave, cwd)) != OE_OK)
     {
         fprintf(stderr, "sample failed: result=%u", result);
     }
