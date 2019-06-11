@@ -1,6 +1,3 @@
-[submodule "openenclave"]
-	path = openenclave
-	url = https://github.com/Microsoft/openenclave.git
 [submodule "openssl"]
 	path = openssl
 	url = https://github.com/openssl/openssl/

@@ -1,0 +1,104 @@
+From 5556c968398f36fb33d83684cb7a3573da5f64c4 Mon Sep 17 00:00:00 2001
+From: John Kordich <johnkord@microsoft.com>
+Date: Wed, 5 Jun 2019 20:47:05 +0000
+Subject: [PATCH] Add support for recursive calls to oe_once/pthread_once.
+
+Add comments and rename #defines for oe_once.
+---
+ enclave/core/sgx/once.c | 65 +++++++++++++++++++++++++++++++++++++++----------
+ 1 file changed, 52 insertions(+), 13 deletions(-)
+
+diff --git a/enclave/core/sgx/once.c b/enclave/core/sgx/once.c
+index 43bf0f8..14b057e 100644
+--- a/enclave/core/sgx/once.c
++++ b/enclave/core/sgx/once.c
+@@ -5,34 +5,73 @@
+ #include <openenclave/internal/thread.h>
+ #include <openenclave/internal/utils.h>
+ 
++#define FUNC_NOT_INVOKED 0
++#define FUNC_BEING_INVOKED 1
++#define FUNC_INVOKED 2
++
+ oe_result_t oe_once(oe_once_t* once, void (*func)(void))
+ {
+     if (!once)
+         return OE_INVALID_PARAMETER;
+ 
+     /* Double checked locking (DCLP). */
+-    oe_once_t o = *once;
+-
+     /* DCLP Acquire barrier. */
+     OE_ATOMIC_MEMORY_BARRIER_ACQUIRE();
+-    if (o == 0)
+-    {
+-        static oe_spinlock_t _lock = OE_SPINLOCK_INITIALIZER;
+ 
+-        oe_spin_lock(&_lock);
+-
+-        if (*once == 0)
++    /*
++      Use an atomic-acquire load operation to check if the function has not been
++      invoked. If the function has already been invoked, there is nothing to do.
++      If the function is being invoked, then this thread must wait for the
++      function invocation to complete. Otherwise, this thread can try to take
++      ownership of invoking the function
++    */
++    if (*once != FUNC_INVOKED)
++    {
++        /*
++          Multiple threads could reach here simultaneously after checking
++          whether the function has been invoked or not. Only one of them must
++          now invoke the function and others must wait for the function
++          invocation to complete.
++          To determine who gets to invoke the function, each thread atomically
++          compares the value of once to FUNC_NOT_INVOKED and if equal, sets the
++          value to FUNC_BEING_INVOKED to signal to other threads that the
++          function is being invoked. There return value of
++          __sync_val_compare_and_swap determines which thread takes ownership.
++          If __sync_val_compare_and_swap returns FUNC_NOT_INVOKED, then that
++          means this thread successfully set once to FUNC_BEING_INVOKED, and can
++          now safely call func. If __sync_val_compare_and_swap returns
++          FUNC_BEING_INVOKED, this means another thread's
++          __sync_val_compare_and_swap succeeded first and therefore this thread
++          now has to wait for the other thread to complete (ie wait for once to
++          become FUNC_INVOKED. If __sync_val_compare_and_swap returns
++          FUNC_INVOKED, that means another thread has already called the
++          function and marked the once as complete. This thread can safely
++          proceed.
++        */
++        oe_once_t retval = __sync_val_compare_and_swap(
++            once, FUNC_NOT_INVOKED, FUNC_BEING_INVOKED);
++        if (retval == FUNC_NOT_INVOKED)
+         {
+             if (func)
+                 func();
+ 
+-            /* DCLP Release barrier. */
+             OE_ATOMIC_MEMORY_BARRIER_RELEASE();
+-            *once = 1;
++            *once = FUNC_INVOKED;
++        }
++        else if (retval == FUNC_BEING_INVOKED)
++        {
++            /*
++              Another thread is invoking the function. Wait for that thread to
++              finish the invocation and mark the once variable to FUNC_INVOKED.
++            */
++            while (__sync_val_compare_and_swap(
++                       once, FUNC_BEING_INVOKED, FUNC_BEING_INVOKED) !=
++                   FUNC_BEING_INVOKED)
++            {
++                // Relinquish CPU
++                asm volatile("pause");
++            }
+         }
+-
+-        oe_spin_unlock(&_lock);
+     }
+-
+     return OE_OK;
+ }
+-- 
+2.7.4
+
