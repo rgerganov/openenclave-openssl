@@ -31,16 +31,14 @@ make all install
 ```bash
 git clone https://github.com/microsoft/openenclave.git oe_patched
 cd oe_patched
-git checkout johnkord-openssl_and_curl #Includes openssl built as part of OE SDK
-git reset 2c157d6 --hard #Discard John's changes to build openssl as part of OE SDK, we are now off of an older version of featureio2 branch and has socket and file APIs
-git am ~/openenclave-openssl/openssl/0001-Add-oe_once-recursive-lock.patch #Apply a patch to allow a recursive lock
+git am ~/openenclave-openssl/0001-Add-support-for-recursive-calls-to-oe_once-pthread_o.patch #Apply a patch to allow a recursive lock
 mkdir build
 cd build
 cmake ..
 make
-cmake -DCMAKE_INSTALL_PREFIX=/opt/openenclave-featureio2 ..
+cmake -DCMAKE_INSTALL_PREFIX=/opt/openenclave ..
 sudo make install
-. /opt/openenclave-featureio2/share/openenclave/openenclaverc
+. /opt/openenclave/share/openenclave/openenclaverc
 ```
 
 ## Build the sample
