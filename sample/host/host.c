@@ -36,17 +36,20 @@ int main(int argc, const char* argv[])
              argv[1], OE_ENCLAVE_TYPE_SGX, flags, NULL, 0, &enclave)) != OE_OK)
     {
         fprintf(stderr, "oe_create_crypto_enclave(): result=%u", result);
+        return 1;
     }
     
 
     if ((result = run_server(enclave, cwd)) != OE_OK)
     {
         fprintf(stderr, "sample failed: result=%u", result);
+        return 1;
     }
 
     if ((result = oe_terminate_enclave(enclave)) != OE_OK)
     {
         fprintf(stderr, "oe_terminate_enclave() failed: %u\n", result);
+        return 1;
     }
 
     return 0;

@@ -38,17 +38,17 @@ int create_socket(int port)
     s = socket(AF_INET, SOCK_STREAM, 0);
     if (s < 0) {
         printf("Unable to create socket");
-        exit(EXIT_FAILURE);
+        oe_abort();
     }
 
     if (bind(s, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
         printf("Unable to bind");
-        exit(EXIT_FAILURE);
+        oe_abort();
     }
 
     if (listen(s, 1) < 0) {
         printf("Unable to listen");
-        exit(EXIT_FAILURE);
+        oe_abort();
     }
 
     return s;
@@ -75,7 +75,7 @@ SSL_CTX *create_context()
     ctx = SSL_CTX_new(method);
     if (!ctx) {
         printf("Unable to create SSL context");
-        exit(EXIT_FAILURE);
+        oe_abort();
     }
 
     return ctx;
@@ -94,75 +94,105 @@ void configure_context(SSL_CTX *ctx, char *cwd)
 
     /* Set the key and cert */
     if (SSL_CTX_use_certificate_file(ctx, cert_path, SSL_FILETYPE_PEM) <= 0) {
-        exit(EXIT_FAILURE);
+        oe_abort();
     }
 
     if (SSL_CTX_use_PrivateKey_file(ctx, key_path, SSL_FILETYPE_PEM) <= 0) {
-        exit(EXIT_FAILURE);
+        oe_abort();
     }
 }
 
 void run_server(char *cwd)
 {
     int sock;
-    SSL_CTX *ctx;
+    SSL_CTX *ctx = NULL;
+    SSL *ssl = NULL;
+    int client = 0;
 
     if (OE_OK != oe_load_module_host_socket_interface())
     {
         printf("Error loading host socket interface\n");
+        oe_abort();      
     }
     if (OE_OK != oe_load_module_host_resolver())
     {
         printf("Error loading host resolver\n");
+        oe_abort();
     }
     if (OE_OK != oe_load_module_host_file_system())
     {
         printf("Error loading host file system\n");
+        oe_abort();
     }
     if (mount("/", "/", "oe_host_file_system", MS_RDONLY, NULL))
     {
         printf("Error mounting host file system\n");
+        oe_abort();
     }
 
     init_openssl();
-    ctx = create_context();
+    if(!(ctx = create_context()))
+    {
+       printf("Error creating context\n");
+       oe_abort();
+    }
 
     configure_context(ctx, cwd);
 
-    sock = create_socket(4433);
+    if(!(sock = create_socket(4433)))
+    {
+        oe_abort();
+    }
 
-
+   const char reply[] = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 23\nConnection: Close\n\nHello from an enclave!\n";
     /* Handle connections */
     while (1) {
         struct sockaddr_in addr;
         uint len = sizeof(addr);
-        SSL *ssl;
-        const char reply[] = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 23\nConnection: Close\n\nHello from an enclave!\n";
 
-        int client = accept(sock, (struct sockaddr*)&addr, &len);
+        client = accept(sock, (struct sockaddr*)&addr, &len);
         printf("accepted\n");
-        if (client < 0) {
+        if (client < 0)
+        {
             printf("Unable to accept");
-            exit(EXIT_FAILURE);
+            oe_abort();
         }
 
-        ssl = SSL_new(ctx);
-        SSL_set_fd(ssl, client);
-
-        if (SSL_accept(ssl) <= 0) {
+        if(!(ssl = SSL_new(ctx)))
+        {
+            oe_abort();
         }
-        else {
+        if(!SSL_set_fd(ssl, client))
+        {
+            oe_abort();
+        }
+
+        if (SSL_accept(ssl) <= 0)
+        {
+            oe_abort();
+        }
+        else 
+        {
             char buffer[100000] = { 0 };
             size_t readbytes = 0;
-            SSL_read_ex(ssl, buffer, 100000, &readbytes);
-            SSL_write(ssl, reply, (int)strlen(reply));
+            if(SSL_read_ex(ssl, buffer, 100000, &readbytes) <= 0)
+            {
+                oe_abort();
+            }
+            if(SSL_write(ssl, reply, (int)strlen(reply)) <= 0)
+            {
+                oe_abort();
+            }
+            break;
         }
-
-        SSL_free(ssl);
-        close(client);
     }
-
-    close(sock);
-    SSL_CTX_free(ctx);
+    if (client)
+        close(client);
+    if(ssl)
+        SSL_free(ssl);
+    if(sock)
+        close(sock);
+    if(ctx)
+       SSL_CTX_free(ctx);
     cleanup_openssl();
 }
