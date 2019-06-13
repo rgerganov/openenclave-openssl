@@ -9,6 +9,7 @@ enclave {
 
     trusted {
         public int enc_test(
+            [string, in] char* cwd,
             [out, size=1024] char* test_name);
 
     };

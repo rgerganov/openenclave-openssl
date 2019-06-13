@@ -10,6 +10,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <linux/limits.h>
+#include <unistd.h>
 
 #include "openssl_u.h"
 
@@ -17,7 +19,11 @@ void test(oe_enclave_t* enclave)
 {
     int ret = 1;
     char test_name[STRLEN];
-    oe_result_t result = enc_test(enclave, &ret, test_name);
+    char cwd[PATH_MAX];
+    if (!getcwd(cwd, sizeof(cwd))) {
+       abort();
+    }
+    oe_result_t result = enc_test(enclave, &ret, cwd, test_name);
     OE_TEST(result == OE_OK);
 
     if (ret == 0)

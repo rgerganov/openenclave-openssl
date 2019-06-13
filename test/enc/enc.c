@@ -8,7 +8,7 @@ extern const char* __test__;
 
 extern int main(int argc, const char* argv[]);
 
-int enc_test(char test_name[STRLEN])
+int enc_test(char *cwd, char test_name[STRLEN])
 {
     static const char* argv[] = {
         "test",
@@ -16,11 +16,22 @@ int enc_test(char test_name[STRLEN])
     };
     static const int argc = sizeof(argv) / sizeof(argv[0]);
 
-    oe_enable_feature(OE_FEATURE_HOST_FILES);
-    oe_enable_feature(OE_FEATURE_HOST_SOCKETS);
-    oe_enable_feature(OE_FEATURE_HOST_RESOLVER);
-    oe_enable_feature(OE_FEATURE_POLLING);
-    mount(".", "/", "hostfs", MS_RDONLY, NULL);
+     if (OE_OK != oe_load_module_host_socket_interface())
+    {        
+        return(-1);
+    }
+    if (OE_OK != oe_load_module_host_resolver())
+    {
+        return(-1);
+    }
+    if (OE_OK != oe_load_module_host_file_system())
+    {
+        return(-1);
+    }
+    if (mount(cwd, "/", "oe_host_file_system", MS_RDONLY, NULL))
+    {
+        return(-1);
+    }
 
     return main(argc, argv);
 }

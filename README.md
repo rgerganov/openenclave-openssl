@@ -1,9 +1,8 @@
-# For using the OpenSSL libraries with the Open Enclave SDK
+# Prototype for using the OpenSSL libraries with the Open Enclave SDK
 ## Clone the repo
 ```bash
-git clone https://github.com/openenclave/openenclave-openssl
+git clone https://github.com/openenclave/openenclave-openssl --recursive
 ```
-
 ## Build and install the same version of MUSL used in Open Enclave
 ```bash
 wget http://www.musl-libc.org/releases/ musl-1.1.21.tar.gz
@@ -18,28 +17,44 @@ make
 
 make install
 ```
-## Build and install openssl for open enclave
 
-```bash
-cd ~/openenclave-openssl/openssl
-git am  ../0001-Get-openssl-to-build-against-MUSL-headers.-Use-SGX-r.patch
-./config --with-rand-seed=none no-idea no-mdc2 no-rc5 no-rc4 no-bf no-ec2m no-camellia no-cast no-srp no-hw no-dso no-shared no-ssl3 no-md2 no-md4 no-afalgeng -D_FORTIFY_SOURCE=2 -DGETPID_IS_MEANINGLESS --prefix=/opt/oe-openssl CC=/opt/musl/bin/musl-gcc
-make all install
-```
 
 ## Build and install the right branch of openenclave and a patch
 ```bash
 git clone https://github.com/microsoft/openenclave.git oe_patched
+
 cd oe_patched
-git am ~/openenclave-openssl/0001-Add-support-for-recursive-calls-to-oe_once-pthread_o.patch #Apply a patch to allow a recursive lock
+
+git am ~/openenclave-openssl/0001-Add-support-for-recursive-calls-to-oe_once-pthread_o.patch #Apply a patch to allow a call to oe_once
+
 mkdir build
+
 cd build
+
 cmake ..
+
 make
+
 cmake -DCMAKE_INSTALL_PREFIX=/opt/openenclave ..
+
 sudo make install
+
 . /opt/openenclave/share/openenclave/openenclaverc
 ```
+
+## Build and install openssl for open enclave
+
+```bash
+
+cd ~/openenclave-openssl/openssl
+
+git am  ../0001-Get-openssl-to-build-against-MUSL-headers.-Use-SGX-r.patch
+
+./config --with-rand-seed=none no-idea no-mdc2 no-rc5 no-rc4 no-bf no-ec2m no-camellia no-cast no-srp no-hw no-dso no-shared no-ssl3 no-md2 no-md4 no-afalgeng -D_FORTIFY_SOURCE=2 -DGETPID_IS_MEANINGLESS --prefix=/opt/oe-openssl CC=/opt/musl/bin/musl-gcc
+
+make all install
+```
+
 
 ## Build the sample
 ```bash

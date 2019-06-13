@@ -1,6 +1,5 @@
-## Build and  tests
+## Build  tests
 ```bash
-cd test
 mkdir build
 cd build
 cmake ..

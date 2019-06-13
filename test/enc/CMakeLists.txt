@@ -116,9 +116,8 @@ if (CMAKE_CXX_COMPILER_ID MATCHES GNU)
         )
 endif ()
 
-target_link_libraries(openssl-support PUBLIC /opt/openenclave-featureio2/lib/openenclave/enclave/liboecpio.a /opt/openenclave-featureio2/lib/openenclave/enclave/liboesgxfsenclave.a  openenclave::oeenclave openenclave::oelibc)
 target_link_libraries(openssl-support INTERFACE -Wl,--undefined=Test)
-
+target_link_libraries(openssl-support PUBLIC openenclave::oeenclave openenclave::oelibcxx)
 target_include_directories(openssl-support PRIVATE ../../openssl/include/openssl ../../openssl/include ../../openssl/include/internal ../../openssl/test ../../openssl ../../openssl/crypto/include ../../openssl/crypto/ec)
 
 add_library(openssl_imported IMPORTED STATIC)
@@ -146,7 +145,7 @@ function(add_openssl_test_enc NAME TESTFILE)
     
     target_link_libraries(openssl-${NAME}_enc PUBLIC openssl-support)
     target_link_libraries(openssl-${NAME}_enc PUBLIC openssl_imported openssl_crypto_imported)    
-    target_link_libraries(openssl-${NAME}_enc PUBLIC  /opt/openenclave-featureio2/lib/openenclave/enclave/liboecpio.a /opt/openenclave-featureio2/lib/openenclave/enclave/liboesgxfsenclave.a   openenclave::oeenclave openenclave::oelibcxx)
+    target_link_libraries(openssl-${NAME}_enc PUBLIC openenclave::oeenclave openenclave::oelibcxx openenclave::oehostsock  openenclave::oehostresolver openenclave::oehostfs)
     
 endfunction(add_openssl_test_enc)
 
