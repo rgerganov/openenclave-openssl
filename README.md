@@ -21,7 +21,7 @@ make install
 
 ## Build and install the right branch of openenclave and a patch
 ```bash
-git clone https://github.com/microsoft/openenclave.git oe_patched
+git clone https://github.com/openenclave/openenclave.git oe_patched
 
 cd oe_patched
 
