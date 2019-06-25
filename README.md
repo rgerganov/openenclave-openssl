@@ -1,8 +1,4 @@
 # Prototype for using the OpenSSL libraries with the Open Enclave SDK
-## Clone the repo
-```bash
-git clone https://github.com/openenclave/openenclave-openssl --recursive
-```
 ## Build and install the same version of MUSL used in Open Enclave
 ```bash
 wget http://www.musl-libc.org/releases/ musl-1.1.21.tar.gz
@@ -17,29 +13,9 @@ make
 
 make install
 ```
-
-
-## Build and install the right branch of openenclave and a patch
+## Clone the repo
 ```bash
-git clone https://github.com/openenclave/openenclave.git oe_patched
-
-cd oe_patched
-
-git am ~/openenclave-openssl/0001-Add-support-for-recursive-calls-to-oe_once-pthread_o.patch #Apply a patch to allow a call to oe_once
-
-mkdir build
-
-cd build
-
-cmake ..
-
-make
-
-cmake -DCMAKE_INSTALL_PREFIX=/opt/openenclave ..
-
-sudo make install
-
-. /opt/openenclave/share/openenclave/openenclaverc
+git clone https://github.com/openenclave/openenclave-openssl --recursive
 ```
 
 ## Build and install openssl for open enclave
