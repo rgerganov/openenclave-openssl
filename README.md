@@ -11,7 +11,7 @@ cd musl-1.1.21
 
 make
 
-make install
+sudo make install
 ```
 ## Clone the repo
 ```bash
