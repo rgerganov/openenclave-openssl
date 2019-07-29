@@ -10,8 +10,5 @@ clean:
 	$(MAKE) -C host clean
 
 run:
-	host/helloworldhost ./enc/helloworldenc.signed
-
-simulate:
-	host/helloworldhost ./enc/helloworldenc.signed --simulate
+	host/openssl_serverhost ./enc/openssl_server_enc.signed
 
